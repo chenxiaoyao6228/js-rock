@@ -3,48 +3,45 @@ class Dep {
     this.effects = new Set()
   }
   depend() {
+    // 注意使用的是currentEffect将Dep和被Proxy的数联系起来
     if (currentEffect) {
       this.effects.add(currentEffect)
     }
   }
   notice() {
     this.effects.forEach(effect => {
-      effect() // effect调用的时候不需要传入dep.value
+      effect()
     })
   }
 }
 
-let targetMap = new Map()
-
+let targetMaps = new Map()
 function getDeps(target, key) {
-  let depsMap = targetMap.get(target)
-  if (!depsMap) {
-    depsMap = new Map()
-    targetMap.set(target, depsMap)
+  let targetMap = targetMaps.get(target)
+  if (!targetMap) {
+    targetMap = new Map()
+    targetMaps.set(target, targetMap)
   }
-  let dep = depsMap.get(key)
-  if (!dep) {
-    dep = new Dep()
-    depsMap.set(key, dep)
+  // key也一样
+  let depsOfKey = targetMap.get(key)
+  if (!depsOfKey) {
+    depsOfKey = new Dep()
+    targetMap.set(key, depsOfKey)
   }
-  return dep
+  return depsOfKey
 }
-
 export function reactive(target) {
   return new Proxy(target, {
     get(target, key) {
-      // 要为每一个key进行依赖收集
-      let dep = getDeps(target, key)
-      // 依赖收集
-      dep.depend()
-      // 返回值
+      // 每个target都会有一个map来收集
+      let deps = getDeps(target, key)
+      deps.depend()
       return Reflect.get(target, key)
     },
-    set(target, key, value) {
-      let dep = getDeps(target, key)
-      let result = Reflect.set(target, key, value)
-      // 通知
-      dep.notice()
+    set(target, key, val) {
+      let result = Reflect.set(target, key, val)
+      let deps = getDeps(target, key)
+      deps.notice()
       return result
     }
   })
