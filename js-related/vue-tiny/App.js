@@ -3,13 +3,20 @@ import { h } from './core/h.js'
 
 const App = {
   render(context) {
+    let children = [
+      h('p', null, String(context.value)),
+      h('p', null, String(context.value))
+    ]
+    if (context.value > 1 && context.value < 3) {
+      children.push(h('p', null, String(context.value)))
+    }
     return h(
       'div',
       {
-        id: 'id-1',
-        class: 'class-1'
+        id: 'id-' + context.value,
+        class: 'class-' + context.value
       },
-      [h('p', null, String(context.value)), h('p', null, String(context.value))]
+      children
     )
   },
   setup() {
@@ -20,4 +27,5 @@ const App = {
     return state
   }
 }
+
 export default App
